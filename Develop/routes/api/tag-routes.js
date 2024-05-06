@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
       include: Product
     });
     res.status(200).json(tags)
-  } catch(err) {
+  } catch (err) {
     res.status(500).json(err);
   }
 });
@@ -37,17 +37,50 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
-  // create a new tag
-  try {
-    const tag = await Tag.create({
-      id: req.params.id,
-      tag_name: req.body.tag_name
+// router.post('/', (req, res) => {
+//   // create a new tag
+//   Tag.create(req.body)
+//     .then((tag) => {
+//       // if there's product tags, we need to create pairings to bulk create in the ProductTag model
+//       if (req.body.tagIds.length) {
+//         const productTagIdArr = req.body.tagIds.map((product_id) => {
+//           return {
+//             tag_id: tag.id,
+//             product_id,
+//           };
+//         });
+//         return ProductTag.bulkCreate(productTagIdArr);
+//       }
+//       // if no product tags, just respond
+//       res.status(200).json(tag);
+//     })
+//     .then((productTagIds) => res.status(200).json(productTagIds))
+//     .catch((err) => {
+//       console.log(err);
+//       res.status(400).json(err);
+//     });
+// });
+
+router.post('/', (req, res) => {   // create a new tag   
+  Tag.create(req.body)
+    .then((tag) => {
+      // if there's product tags, we need to create pairings to bulk create in the ProductTag model       
+      if (req.body.tagIds.length) {
+        const productTagIdArr = req.body.tagIds.map((product_id) => {
+          return {
+            tag_id: tag.id,
+            product_id,
+          };
+        });
+        return ProductTag.bulkCreate(productTagIdArr).then((productTagIds) => res.status(200).json(productTagIds));
+      }
+      // if no product tags, just respond       
+      res.status(200).json(tag);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(400).json(err);
     });
-    res.status(200).json(tag)
-  } catch (err) {
-    res.status(500).json(err)
-  }
 });
 
 router.put('/:id', async (req, res) => {
@@ -79,7 +112,7 @@ router.delete('/:id', async (req, res) => {
     if (tag) {
       res.status(200).json(tag)
     } else {
-      res.status(404).json({ message: 'No tag found with this id! '})
+      res.status(404).json({ message: 'No tag found with this id! ' })
     }
   } catch (err) {
     res.status(500).json(err)
